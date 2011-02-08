@@ -1,4 +1,4 @@
-import web, subprocess, shlex
+import web, subprocess, shlex, time
 
 # pretty stupid seven-segment display ocr web service. 
 # needs web.py and ssocr to run. ssocr binary must be in local folder
@@ -18,9 +18,17 @@ class Upload:
 	def POST(self):
 		SSOCR_DIR = "."
 		request = web.input(uploadedfile={}) # 'uploadedfile' is what AW's code uses
+
+		archive_name = "%s/%d.jpg" % (SSOCR_DIR,int(time.time()))
+		archimg = open(archive_name, "w")
+		archimg.write(request['uploadedfile'].file.read())
+		archimg.close()
+
+		archimg = open(archive_name, "r")
 		tmpimg = open(SSOCR_DIR + "/tmp.jpg","w")
-		tmpimg.write(request['uploadedfile'].file.read())
+		tmpimg.write(archimg.read())
 		tmpimg.close()
+		archimg.close()
 		
 		digits = 250
 		result = ""
@@ -30,7 +38,7 @@ class Upload:
 	
 			p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
-			#web.debug("out: " + str(p))
+			web.debug("out: " + str(p))
 
 			# if we get a result, it will come on stdout, which we store in p[0]. if there's
 			# an error, we are assuming it's because we've detected the wrong number of digits
